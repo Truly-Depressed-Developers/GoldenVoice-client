@@ -49,8 +49,8 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:ems="10"
-                android:inputType="text"
-                android:text="Type your problem" />
+                android:hint="What is your problem?"
+                android:inputType="text" />
 
             <Button
                 android:id="@+id/submitBtn"

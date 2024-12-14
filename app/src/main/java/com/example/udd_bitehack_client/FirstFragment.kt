@@ -1,18 +1,26 @@
 package com.example.udd_bitehack_client
 
-import android.icu.text.ListFormatter.Width
+import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.Gravity
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.core.view.setPadding
+import androidx.fragment.app.Fragment
 import com.example.udd_bitehack_client.databinding.FragmentFirstBinding
+import com.example.udd_bitehack_client.recording.RecordAudio
+import com.example.udd_bitehack_client.recording.RecordAudio.Companion.RECORD_AUDIO_PERMISSION_REQUEST_CODE
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.FileReader
+
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -24,6 +32,10 @@ class FirstFragment : Fragment() {
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
+
+    var started: Boolean = false
+    var recordTask: RecordAudio? = null
+    var os: FileOutputStream? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -39,7 +51,7 @@ class FirstFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.recordBtn.setOnClickListener {
-            Log.d(tag, "button record clicked")
+            handleRecordButtonClick()
         }
         binding.submitBtn.setOnClickListener {
             submitClicked()
@@ -105,5 +117,66 @@ class FirstFragment : Fragment() {
         params.width = LinearLayout.LayoutParams.WRAP_CONTENT
         textView.layoutParams = params
         return textView
+    }
+
+    // recording
+
+    private fun handleRecordButtonClick(){
+        Log.d(tag, "button record clicked")
+        if(started){
+            stopAquisition()
+            // change recordButton background color to red
+            binding.recordBtn.setBackgroundColor(Color.TRANSPARENT)
+        } else {
+            startAquisition()
+            // clear recordButton background color
+            binding.recordBtn.setBackgroundColor(Color.RED)
+        }
+    }
+
+    private fun onRecordingfinished(fName: String){
+        Log.d(tag, "recording finished")
+        started = false
+        binding.recordBtn.setBackgroundColor(Color.TRANSPARENT)
+
+    }
+
+    fun stopAquisition() {
+        Log.w(tag, "stopAquisition")
+        if (started) {
+            started = false
+            recordTask?.started = false
+            recordTask?.cancel(true)
+        }
+    }
+
+    fun startAquisition() {
+        Log.w(tag, "startAquisition")
+        val handler: Handler = Handler()
+        handler.postDelayed(Runnable {
+            //elapsedTime=0;
+            started = true
+            recordTask = RecordAudio(requireContext(), os){
+                f -> onRecordingfinished(f)
+            }
+            recordTask!!.execute()
+            //startButton.setText("RESET");
+        }, 500)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == RECORD_AUDIO_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startAquisition()
+            } else {
+                addMessageResponse("Audio recording permission denied.")
+            }
+        }
     }
 }
