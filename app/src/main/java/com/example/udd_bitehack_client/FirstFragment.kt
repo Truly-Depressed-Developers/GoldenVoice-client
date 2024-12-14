@@ -83,7 +83,7 @@ class FirstFragment : Fragment() {
     private fun createRequestTextView(): TextView{
         val textView = TextView(this.context)
         textView.setBackgroundResource(R.drawable.text_request_styles)
-        textView.setTextColor(ContextCompat.getColor(this.requireContext(), R.color.white))
+        textView.setTextColor(ContextCompat.getColor(this.requireContext(), R.color.tekst))
         textView.setPadding(10, 10, 10, 10) // Left, top, right, bottom padding
         textView.textSize = 18f
 
@@ -105,7 +105,7 @@ class FirstFragment : Fragment() {
     private fun createResponseTextView(): TextView{
         val textView = TextView(this.context)
         textView.setBackgroundResource(R.drawable.text_response_styles)
-        textView.setTextColor(ContextCompat.getColor(this.requireContext(), R.color.white))
+        textView.setTextColor(ContextCompat.getColor(this.requireContext(), R.color.tekst))
         textView.setPadding(10, 10, 10, 10) // Left, top, right, bottom padding
         textView.textSize = 18f
 
