@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.udd_bitehack_client.api_communication.ApiCommunicationController
 import com.example.udd_bitehack_client.databinding.FragmentFirstBinding
+import com.example.udd_bitehack_client.playing.TTSController
 import com.example.udd_bitehack_client.recording.FileHelper
 import com.example.udd_bitehack_client.recording.RecordAudio
 import com.example.udd_bitehack_client.recording.RecordAudio.Companion.RECORD_AUDIO_PERMISSION_REQUEST_CODE
@@ -37,7 +38,8 @@ class FirstFragment : Fragment() {
     var os: FileOutputStream? = null
 
     lateinit var fileHelper: FileHelper
-    val apiController = ApiCommunicationController()
+    private val apiController = ApiCommunicationController()
+    lateinit var ttsController: TTSController
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -60,6 +62,7 @@ class FirstFragment : Fragment() {
         }
 
         fileHelper = FileHelper(requireContext())
+        ttsController = TTSController(requireContext())
     }
 
     override fun onDestroyView() {
@@ -158,6 +161,7 @@ class FirstFragment : Fragment() {
             activity?.runOnUiThread {
                 addMessageRequest(req)
                 addMessageResponse(res)
+                ttsController.speakText(res)
             }
         }
         stream?.close()

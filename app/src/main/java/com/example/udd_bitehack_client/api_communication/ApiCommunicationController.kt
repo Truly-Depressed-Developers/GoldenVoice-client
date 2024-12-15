@@ -1,6 +1,7 @@
 package com.example.udd_bitehack_client.api_communication
 
 import android.util.Log
+import com.example.udd_bitehack_client.SERVER_PATH
 import com.example.udd_bitehack_client.SERVER_URL
 import okhttp3.Call
 import okhttp3.Callback
@@ -25,7 +26,7 @@ class ApiCommunicationController {
         val fileRequestBody = RequestBody.create("audio/wave".toMediaTypeOrNull(), stream)
 
         val request = Request.Builder()
-            .url("$SERVER_URL/wavFile")
+            .url("$SERVER_URL$SERVER_PATH")
             .post(fileRequestBody)
             .build()
 
