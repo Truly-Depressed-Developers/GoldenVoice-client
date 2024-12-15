@@ -1,7 +1,6 @@
 package com.example.udd_bitehack_client
 
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -13,13 +12,13 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import com.example.udd_bitehack_client.api_communication.ApiCommunicationController
 import com.example.udd_bitehack_client.databinding.FragmentFirstBinding
+import com.example.udd_bitehack_client.recording.FileHelper
 import com.example.udd_bitehack_client.recording.RecordAudio
 import com.example.udd_bitehack_client.recording.RecordAudio.Companion.RECORD_AUDIO_PERMISSION_REQUEST_CODE
-import java.io.File
-import java.io.FileInputStream
+import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
-import java.io.FileReader
 
 
 /**
@@ -36,6 +35,9 @@ class FirstFragment : Fragment() {
     var started: Boolean = false
     var recordTask: RecordAudio? = null
     var os: FileOutputStream? = null
+
+    lateinit var fileHelper: FileHelper
+    val apiController = ApiCommunicationController()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -56,6 +58,8 @@ class FirstFragment : Fragment() {
         binding.submitBtn.setOnClickListener {
             submitClicked()
         }
+
+        fileHelper = FileHelper(requireContext())
     }
 
     override fun onDestroyView() {
@@ -126,19 +130,37 @@ class FirstFragment : Fragment() {
         if(started){
             stopAquisition()
             // change recordButton background color to red
-            binding.recordBtn.setBackgroundColor(Color.TRANSPARENT)
+            binding.recordBtn.clearColorFilter()
         } else {
             startAquisition()
             // clear recordButton background color
-            binding.recordBtn.setBackgroundColor(Color.RED)
+            binding.recordBtn.setColorFilter(ContextCompat.getColor(requireContext(), R.color.red))
         }
     }
 
     private fun onRecordingfinished(fName: String){
         Log.d(tag, "recording finished")
         started = false
-        binding.recordBtn.setBackgroundColor(Color.TRANSPARENT)
+        binding.recordBtn.clearColorFilter()
+        // get file under fName
+        Log.d(tag, "file path: $fName")
+        val txt = fileHelper.readFile(fName)
+        val stream = fileHelper.getOutputStream(fName)
+        Log.d(tag, "file: $txt ${stream?.channel?.size()} ${stream?.fd?.valid()}")
 
+        val baos = ByteArrayOutputStream()
+        if (stream != null) {
+            baos.writeTo(stream)
+        }
+
+        apiController.uploadFileAndGetResponse(baos.toByteArray()){
+            res, req ->
+            activity?.runOnUiThread {
+                addMessageRequest(req)
+                addMessageResponse(res)
+            }
+        }
+        stream?.close()
     }
 
     fun stopAquisition() {
@@ -146,7 +168,7 @@ class FirstFragment : Fragment() {
         if (started) {
             started = false
             recordTask?.started = false
-            recordTask?.cancel(true)
+//            recordTask?.cancel(true)
         }
     }
 

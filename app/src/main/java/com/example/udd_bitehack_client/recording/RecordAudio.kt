@@ -11,8 +11,7 @@ import android.os.AsyncTask
 import android.os.Environment
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import com.example.udd_bitehack_client.AUDIO_RECORDER_FILE_EXT_WAV
-import com.example.udd_bitehack_client.AUDIO_RECORDER_FOLDER
+import com.example.udd_bitehack_client.AUDIO_RECORDER_RESULT_FILE
 import com.example.udd_bitehack_client.AUDIO_RECORDER_TEMP_FILE
 import java.io.File
 import java.io.FileInputStream
@@ -27,6 +26,8 @@ class RecordAudio(val context: Context, var os: FileOutputStream?, var endedCall
         val TAG = "RecordAudio"
         val RECORD_AUDIO_PERMISSION_REQUEST_CODE = 4001
     }
+
+    val fileHelper = FileHelper(context)
 
     var bufferSize: Int = 0
     var frequency: Int = 44100 //8000;
@@ -45,8 +46,10 @@ class RecordAudio(val context: Context, var os: FileOutputStream?, var endedCall
         val filename = tempFilename
 
         try {
-            os = FileOutputStream(filename)
+            // create file under filename
+            os = fileHelper.getOutputStream(filename)
         } catch (e: FileNotFoundException) {
+            Log.e(TAG, "file not found ${e.message}")
             e.printStackTrace()
         }
 
@@ -61,28 +64,28 @@ class RecordAudio(val context: Context, var os: FileOutputStream?, var endedCall
             channelConfiguration, audioEncoding, bufferSize
         )
 
-            if (ActivityCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.RECORD_AUDIO
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                // Request the permission
-                ActivityCompat.requestPermissions(
-                    context as Activity, // Assuming 'context' is an Activity
-                    arrayOf(Manifest.permission.RECORD_AUDIO),
-                    RECORD_AUDIO_PERMISSION_REQUEST_CODE
-                )
-                return null
-            }
-
-            startRecording(audioRecord)
-
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // Request the permission
+            ActivityCompat.requestPermissions(
+                context as Activity, // Assuming 'context' is an Activity
+                arrayOf(Manifest.permission.RECORD_AUDIO),
+                RECORD_AUDIO_PERMISSION_REQUEST_CODE
+            )
             return null
-        } //fine di doInBackground
+        }
 
-        private fun startRecording(audioRecord: AudioRecord) {
-            try{
-                started = true
+        startRecording(audioRecord)
+
+        return null
+    }
+
+    private fun startRecording(audioRecord: AudioRecord) {
+        try{
+            started = true
             val buffer = ShortArray(bufferSize)
 
             audioRecord.startRecording()
@@ -101,6 +104,7 @@ class RecordAudio(val context: Context, var os: FileOutputStream?, var endedCall
                         try {
                             os?.write(byteBuffer)
                         } catch (e: IOException) {
+                            Log.e(TAG, "IOException os?.write(byteBuffer) ${e.message}")
                             e.printStackTrace()
                         }
                         silenceCounter = 0
@@ -131,7 +135,7 @@ class RecordAudio(val context: Context, var os: FileOutputStream?, var endedCall
             }
 
             copyWaveFile(tempFilename, filename)
-            deleteTempFile()
+//            deleteTempFile()
             Log.d(TAG, "Audio recorded successfully $tempFilename, $filename")
             endedCallback(filename)
         } catch (t: Throwable) {
@@ -175,40 +179,35 @@ class RecordAudio(val context: Context, var os: FileOutputStream?, var endedCall
     }
 
     val filename: String
-        /*
-               @Override
-               protected void onProgressUpdate(Double... values) {
-                   DecimalFormat sf = new DecimalFormat("000.0000");
-                   elapsedTimeTxt.setText(sf.format(values[0]));
-
-               }
-               */
         get() {
-            val filepath = Environment.getExternalStorageDirectory().path
-            val file = File(filepath, AUDIO_RECORDER_FOLDER)
-
-            if (!file.exists()) {
-                file.mkdirs()
-            }
-
-            return (file.absolutePath + "/" + System.currentTimeMillis() + AUDIO_RECORDER_FILE_EXT_WAV)
+//            val filepath = Environment.getExternalStorageDirectory().path
+//            val file = File(filepath, AUDIO_RECORDER_FOLDER)
+//
+//            if (!file.exists()) {
+//                val s = file.mkdirs()
+//                Log.d(TAG, "Directory created: $s")
+//            }
+//
+//            return (file.absolutePath + "/" + System.currentTimeMillis() + AUDIO_RECORDER_FILE_EXT_WAV)
+            return AUDIO_RECORDER_RESULT_FILE
         }
 
 
     private val tempFilename: String
         get() {
-            val filepath = Environment.getExternalStorageDirectory().path
-            val file = File(filepath, AUDIO_RECORDER_FOLDER)
+//            val filepath = Environment.getExternalStorageDirectory().path
+//            val file = File(filepath, AUDIO_RECORDER_FOLDER)
+//
+//            if (!file.exists()) {
+//                val s = file.mkdirs()
+//                Log.d(TAG, "Directory created: $s")
+//            }
+//
+//            val tempFile = File(filepath, AUDIO_RECORDER_TEMP_FILE)
+//
+//            if (tempFile.exists()) tempFile.delete()
 
-            if (!file.exists()) {
-                file.mkdirs()
-            }
-
-            val tempFile = File(filepath, AUDIO_RECORDER_TEMP_FILE)
-
-            if (tempFile.exists()) tempFile.delete()
-
-            return (file.absolutePath + "/" + AUDIO_RECORDER_TEMP_FILE)
+            return AUDIO_RECORDER_TEMP_FILE
         }
 
 
@@ -230,9 +229,14 @@ class RecordAudio(val context: Context, var os: FileOutputStream?, var endedCall
         val data = ByteArray(bufferSize)
 
         try {
-            `in` = FileInputStream(inFilename)
-            out = FileOutputStream(outFilename)
+            `in` = fileHelper.getInputStream(inFilename)
+            out = fileHelper.getOutputStream(outFilename)
+            if(`in` == null || out == null) {
+                Log.e(TAG, "streams not found")
+                return
+            }
             totalAudioLen = `in`.channel.size()
+            Log.d(TAG, "totalAudioLen: $totalAudioLen $bufferSize")
             totalDataLen = totalAudioLen + 36
 
 
@@ -242,6 +246,7 @@ class RecordAudio(val context: Context, var os: FileOutputStream?, var endedCall
             )
 
             while (`in`.read(data) != -1) {
+                Log.d(TAG, "writing data $data ${data.size}")
                 out.write(data)
             }
 
@@ -249,8 +254,11 @@ class RecordAudio(val context: Context, var os: FileOutputStream?, var endedCall
             out.close()
         } catch (e: FileNotFoundException) {
             e.printStackTrace()
+            Log.e(TAG, "FileNotFoundException ${e.message}")
         } catch (e: IOException) {
             e.printStackTrace()
+            Log.e(TAG, "IOException ${e.message}")
+            throw e
         }
     }
 
