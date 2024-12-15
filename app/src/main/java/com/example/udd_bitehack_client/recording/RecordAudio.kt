@@ -116,11 +116,6 @@ class RecordAudio(val context: Context, var os: FileOutputStream?, var endedCall
                             Log.d(TAG, "silence time ended ending recording")
                         }
                     }
-
-
-                    //show results
-                    //here, with publichProgress function, if you calculate the total saved samples,
-                    //you can optionally show the recorded file length in seconds:      publishProgress(elsapsedTime,0);
                 }
             }
 
@@ -135,7 +130,6 @@ class RecordAudio(val context: Context, var os: FileOutputStream?, var endedCall
             }
 
             copyWaveFile(tempFilename, filename)
-//            deleteTempFile()
             Log.d(TAG, "Audio recorded successfully $tempFilename, $filename")
             endedCallback(filename)
         } catch (t: Throwable) {
@@ -169,8 +163,6 @@ class RecordAudio(val context: Context, var os: FileOutputStream?, var endedCall
         var peakIndex = 0
         while (peakIndex < arrLen) {
             if ((arr[peakIndex] >= thr) || (arr[peakIndex] <= -thr)) {
-                //se supera la soglia, esci e ritorna peakindex-mezzo kernel.
-
                 return peakIndex
             }
             peakIndex++
@@ -178,44 +170,16 @@ class RecordAudio(val context: Context, var os: FileOutputStream?, var endedCall
         return -1 //not found
     }
 
-    val filename: String
+    private val filename: String
         get() {
-//            val filepath = Environment.getExternalStorageDirectory().path
-//            val file = File(filepath, AUDIO_RECORDER_FOLDER)
-//
-//            if (!file.exists()) {
-//                val s = file.mkdirs()
-//                Log.d(TAG, "Directory created: $s")
-//            }
-//
-//            return (file.absolutePath + "/" + System.currentTimeMillis() + AUDIO_RECORDER_FILE_EXT_WAV)
             return AUDIO_RECORDER_RESULT_FILE
         }
 
 
     private val tempFilename: String
         get() {
-//            val filepath = Environment.getExternalStorageDirectory().path
-//            val file = File(filepath, AUDIO_RECORDER_FOLDER)
-//
-//            if (!file.exists()) {
-//                val s = file.mkdirs()
-//                Log.d(TAG, "Directory created: $s")
-//            }
-//
-//            val tempFile = File(filepath, AUDIO_RECORDER_TEMP_FILE)
-//
-//            if (tempFile.exists()) tempFile.delete()
-
             return AUDIO_RECORDER_TEMP_FILE
         }
-
-
-    private fun deleteTempFile() {
-        val file = File(tempFilename)
-
-        file.delete()
-    }
 
     private fun copyWaveFile(inFilename: String, outFilename: String) {
         var `in`: FileInputStream? = null

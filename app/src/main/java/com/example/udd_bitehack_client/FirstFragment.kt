@@ -67,6 +67,7 @@ class FirstFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        ttsController.onDestroy()
         _binding = null
     }
 
@@ -172,7 +173,6 @@ class FirstFragment : Fragment() {
         if (started) {
             started = false
             recordTask?.started = false
-//            recordTask?.cancel(true)
         }
     }
 
@@ -180,13 +180,11 @@ class FirstFragment : Fragment() {
         Log.w(tag, "startAquisition")
         val handler: Handler = Handler()
         handler.postDelayed(Runnable {
-            //elapsedTime=0;
             started = true
             recordTask = RecordAudio(requireContext(), os){
                 f -> onRecordingfinished(f)
             }
             recordTask!!.execute()
-            //startButton.setText("RESET");
         }, 500)
     }
 
